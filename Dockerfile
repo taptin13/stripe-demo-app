@@ -3,11 +3,17 @@ FROM node:18-alpine
 # Set working directory
 WORKDIR /app
 
+# Install build dependencies for native modules (bcrypt)
+RUN apk add --no-cache python3 make g++
+
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
 RUN npm install
+
+# Remove build dependencies to reduce image size
+RUN apk del python3 make g++
 
 # Copy application code
 COPY . .
