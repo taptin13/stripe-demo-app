@@ -1,10 +1,11 @@
-FROM node:18-alpine
+# Build stage
+FROM node:18-alpine AS builder
 
-# Set working directory
 WORKDIR /app
 
-# Install build dependencies for native modules (bcrypt)
-RUN apk add --no-cache python3 make g++
+# Install build dependencies for native modules (bcrypt, sqlite3)
+# setuptools needed for Python 3.12+ (distutils was removed)
+RUN apk add --no-cache python3 python3-dev py3-setuptools make g++ gcc musl-dev
 
 # Copy package files
 COPY package*.json ./
@@ -12,8 +13,14 @@ COPY package*.json ./
 # Install dependencies
 RUN npm install
 
-# Remove build dependencies to reduce image size
-RUN apk del python3 make g++
+# Production stage
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Copy node_modules from builder
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package*.json ./
 
 # Copy application code
 COPY . .
