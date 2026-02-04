@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Stripe Connect Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    header {
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    header nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    header h1 {
+      color: #333;
+      font-size: 1.5em;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+    }
+    
+    .user-info span {
+      color: #666;
+    }
+    
+    .logout-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .logout-btn:hover {
+      background: #5568d3;
+    }
+    
+    .container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card h2 {
+      color: #333;
+      margin-bottom: 15px;
+      font-size: 1.3em;
+    }
+    
+    .card p {
+      color: #666;
+      margin-bottom: 15px;
+      line-height: 1.6;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 10px 20px;
+      background: #667eea;
+      color: white;
+      text-decoration: none;
+      border-radius: 5px;
+      cursor: pointer;
+      border: none;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+    
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+    }
+    
+    .btn-secondary {
+      background: #f0f0f0;
+      color: #333;
+      border: 2px solid #667eea;
+    }
+    
+    .btn-secondary:hover {
+      background: #667eea;
+      color: white;
+    }
+    
+    .restaurants-section {
+      margin-top: 30px;
+    }
+    
+    .restaurants-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+    }
+    
+    .restaurant-card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .restaurant-card h3 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .restaurant-card p {
+      color: #666;
+      margin-bottom: 8px;
+      font-size: 0.95em;
+    }
+    
+    .restaurant-card .actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 15px;
+    }
+    
+    .restaurant-card a {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 0.9em;
+      transition: all 0.3s;
+    }
+    
+    .restaurant-card .view-btn {
+      background: #667eea;
+      color: white;
+    }
+    
+    .restaurant-card .view-btn:hover {
+      background: #5568d3;
+    }
+    
+    .message {
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+      display: block;
+    }
+    
+    .success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+      display: block;
+    }
+    
+    .loading {
+      color: #667eea;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <h1>🎯 Dashboard</h1>
+      <div class="user-info">
+        <span>Welcome, <strong id="userName">User</strong></span>
+        <button class="logout-btn" onclick="logout()">Logout</button>
+      </div>
+    </nav>
+  </header>
+  
+  <div class="container">
+    <div class="message" id="message"></div>
+    
+    <div class="dashboard-grid">
+      <div class="card">
+        <h2>📊 Your Dashboard</h2>
+        <p>Welcome to your Stripe Connect Express dashboard. Manage your restaurants and Stripe accounts here.</p>
+        <button class="btn" onclick="scrollToRestaurants()">View Restaurants</button>
+      </div>
+      
+      <div class="card">
+        <h2>🏪 Add New Restaurant</h2>
+        <p>Register a new restaurant and set up Stripe Connect Express account for payments.</p>
+        <button class="btn" onclick="window.location.href='/restaurants'">Create Restaurant</button>
+      </div>
+      
+      <div class="card">
+        <h2>💡 Next Steps</h2>
+        <p>1. Create a restaurant<br>2. Connect Stripe account<br>3. Complete onboarding<br>4. Start accepting payments</p>
+      </div>
+
+      <div class="card">
+        <h2>🧪 Test Payments</h2>
+        <p>Try a test checkout using menu items and connected accounts.</p>
+        <button class="btn btn-secondary" onclick="window.location.href='/menu'">Open Menu</button>
+      </div>
+    </div>
+    
+    <div class="restaurants-section">
+      <h2 style="color: #333; margin-bottom: 20px;">Your Restaurants</h2>
+      <div class="restaurants-list" id="restaurantsList">
+        <div class="loading">Loading restaurants...</div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    async function loadUser() {
+      try {
+        const response = await fetch('/api/auth/user');
+        if (response.ok) {
+          const user = await response.json();
+          document.getElementById('userName').textContent = user.name;
+        } else {
+          window.location.href = '/login';
+        }
+      } catch (error) {
+        window.location.href = '/login';
+      }
+    }
+    
+    async function loadRestaurants() {
+      try {
+        const response = await fetch('/api/restaurants');
+        if (response.ok) {
+          const restaurants = await response.json();
+          const list = document.getElementById('restaurantsList');
+          
+          if (restaurants.length === 0) {
+            list.innerHTML = '<p style="color: #999; grid-column: 1/-1;">No restaurants yet. <a href="/restaurants" style="color: #667eea;">Create one</a></p>';
+            return;
+          }
+          
+          list.innerHTML = restaurants.map(r => `
+            <div class="restaurant-card">
+              <h3>${r.name}</h3>
+              <p>📧 ${r.email}</p>
+              <p>📍 ${r.city}, ${r.state}</p>
+              <p>Status: <strong>${r.stripe_account_id ? '✓ Connected' : '⏳ Pending'}</strong></p>
+              <div class="actions">
+                <a href="/restaurants/${r.id}" class="view-btn">View Details</a>
+                <a href="/restaurants/${r.id}/menu-manager" class="view-btn" style="background: #28a745;">Manage Menu</a>
+              </div>
+            </div>
+          `).join('');
+        }
+      } catch (error) {
+        console.error('Error loading restaurants:', error);
+      }
+    }
+    
+    async function logout() {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = '/';
+    }
+    
+    function scrollToRestaurants() {
+      document.querySelector('.restaurants-section').scrollIntoView({ behavior: 'smooth' });
+    }
+    
+    loadUser();
+    loadRestaurants();
+  </script>
+</body>
+</html>

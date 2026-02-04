@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restaurant Details - Stripe Connect Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    header {
+      background: white;
+      border-bottom: 1px solid #e0e0e0;
+      padding: 20px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    header nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    header nav > div {
+      display: flex;
+      align-items: center;
+    }
+    
+    header a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    header a:hover {
+      text-decoration: underline;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 0 20px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 30px;
+    }
+    
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+    
+    .card h2 {
+      color: #333;
+      margin-bottom: 20px;
+      font-size: 1.3em;
+    }
+    
+    .info-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 15px;
+      margin-bottom: 20px;
+    }
+    
+    .info-label {
+      color: #666;
+      font-weight: 500;
+    }
+    
+    .info-value {
+      color: #333;
+    }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 4px;
+      font-size: 0.9em;
+      font-weight: 600;
+    }
+    
+    .status-pending {
+      background: #fff3cd;
+      color: #856404;
+    }
+    
+    .status-connected {
+      background: #d4edda;
+      color: #155724;
+    }
+    
+    .status-incomplete {
+      background: #f8d7da;
+      color: #721c24;
+    }
+    
+    .btn {
+      display: inline-block;
+      padding: 12px 24px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.3s;
+      text-decoration: none;
+      margin-right: 10px;
+    }
+    
+    .btn:hover {
+      background: #5568d3;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #6c757d;
+    }
+    
+    .btn-secondary:hover {
+      background: #5a6268;
+    }
+    
+    .btn-success {
+      background: #28a745;
+    }
+    
+    .btn-success:hover {
+      background: #218838;
+    }
+    
+    .message {
+      padding: 15px;
+      border-radius: 5px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    
+    .error {
+      background: #fee;
+      color: #c33;
+      border: 1px solid #fcc;
+      display: block;
+    }
+    
+    .success {
+      background: #efe;
+      color: #3c3;
+      border: 1px solid #cfc;
+      display: block;
+    }
+    
+    .info {
+      background: #e7f3ff;
+      color: #004085;
+      border: 1px solid #b8daff;
+      display: block;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #667eea;
+      font-weight: 600;
+    }
+    
+    .stripe-actions {
+      margin-top: 20px;
+    }
+    
+    .requirements {
+      background: #fff3cd;
+      padding: 15px;
+      border-radius: 5px;
+      margin-top: 15px;
+    }
+    
+    .requirements ul {
+      margin-left: 20px;
+      margin-top: 10px;
+    }
+    
+    .requirements li {
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <nav>
+      <h2>🏪 Restaurant Details</h2>
+      <div>
+        <a href="/dashboard">← Back to Dashboard</a>
+        <a href="#" onclick="window.location.href=`/restaurants/${restaurantId}/menu-manager`; return false;" style="margin-left: 15px; background: #28a745; color: white; padding: 10px 20px; border-radius: 5px; text-decoration: none; font-weight: 600;">📋 Manage Menu</a>
+      </div>
+    </nav>
+  </header>
+  
+  <div class="container">
+    <div class="message" id="message"></div>
+    
+    <div id="loadingState" class="loading">Loading restaurant details...</div>
+    
+    <div id="restaurantDetails" style="display: none;">
+      <div class="card">
+        <h2 id="restaurantName"></h2>
+        <div class="info-grid" id="restaurantInfo"></div>
+      </div>
+      
+      <div class="card">
+        <h2>Stripe Connect Status</h2>
+        <div class="info-grid">
+          <div class="info-label">Account Status:</div>
+          <div id="stripeStatus"></div>
+          
+          <div class="info-label">Charges Enabled:</div>
+          <div id="chargesEnabled">-</div>
+          
+          <div class="info-label">Payouts Enabled:</div>
+          <div id="payoutsEnabled">-</div>
+          
+          <div class="info-label">Stripe Account ID:</div>
+          <div id="stripeAccountId">Not created</div>
+        </div>
+        
+        <div id="requirements"></div>
+        
+        <div class="stripe-actions">
+          <button id="createAccountBtn" class="btn" style="display: none;">Create Stripe Account</button>
+          <button id="refreshLinkBtn" class="btn btn-secondary" style="display: none;">Refresh Onboarding Link</button>
+          <button id="checkStatusBtn" class="btn btn-success" style="display: none;">Check Status</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const restaurantId = window.location.pathname.split('/').pop();
+    let restaurant = null;
+    
+    async function loadRestaurant() {
+      try {
+        const response = await fetch(`/api/restaurants/${restaurantId}`);
+        if (!response.ok) {
+          throw new Error('Restaurant not found');
+        }
+        
+        restaurant = await response.json();
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('restaurantDetails').style.display = 'block';
+        
+        document.getElementById('restaurantName').textContent = restaurant.name;
+        document.getElementById('restaurantInfo').innerHTML = `
+          <div class="info-label">Email:</div>
+          <div class="info-value">${restaurant.email}</div>
+          
+          <div class="info-label">Phone:</div>
+          <div class="info-value">${restaurant.phone || 'N/A'}</div>
+          
+          <div class="info-label">Address:</div>
+          <div class="info-value">${restaurant.address || 'N/A'}</div>
+          
+          <div class="info-label">City/State:</div>
+          <div class="info-value">${restaurant.city || 'N/A'}, ${restaurant.state || 'N/A'}</div>
+          
+          <div class="info-label">Postal Code:</div>
+          <div class="info-value">${restaurant.postal_code || 'N/A'}</div>
+          
+          <div class="info-label">Country:</div>
+          <div class="info-value">${restaurant.country || 'US'}</div>
+        `;
+        
+        await checkStripeStatus();
+      } catch (error) {
+        document.getElementById('message').textContent = error.message;
+        document.getElementById('message').className = 'message error';
+      }
+    }
+    
+    async function checkStripeStatus() {
+      try {
+        const response = await fetch(`/api/restaurants/${restaurantId}/stripe/status`);
+        const status = await response.json();
+        
+        if (status.status === 'not_started') {
+          document.getElementById('stripeStatus').innerHTML = '<span class="status-badge status-pending">Not Connected</span>';
+          document.getElementById('createAccountBtn').style.display = 'inline-block';
+        } else {
+          document.getElementById('stripeAccountId').textContent = status.stripe_account_id;
+          
+          if (status.charges_enabled && status.payouts_enabled) {
+            document.getElementById('stripeStatus').innerHTML = '<span class="status-badge status-connected">✓ Active</span>';
+            document.getElementById('chargesEnabled').innerHTML = '✓ Yes';
+            document.getElementById('payoutsEnabled').innerHTML = '✓ Yes';
+            document.getElementById('checkStatusBtn').style.display = 'inline-block';
+          } else {
+            document.getElementById('stripeStatus').innerHTML = '<span class="status-badge status-incomplete">Onboarding Incomplete</span>';
+            document.getElementById('chargesEnabled').innerHTML = status.charges_enabled ? '✓ Yes' : '✗ No';
+            document.getElementById('payoutsEnabled').innerHTML = status.payouts_enabled ? '✓ Yes' : '✗ No';
+            document.getElementById('refreshLinkBtn').style.display = 'inline-block';
+            document.getElementById('checkStatusBtn').style.display = 'inline-block';
+            
+            if (status.requirements) {
+              displayRequirements(status.requirements);
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Error checking Stripe status:', error);
+      }
+    }
+    
+    function displayRequirements(requirements) {
+      if (requirements.currently_due && requirements.currently_due.length > 0) {
+        const reqDiv = document.getElementById('requirements');
+        reqDiv.innerHTML = `
+          <div class="requirements">
+            <strong>⚠️ Onboarding Requirements:</strong>
+            <ul>
+              ${requirements.currently_due.map(req => `<li>${req.replace(/_/g, ' ')}</li>`).join('')}
+            </ul>
+            <p style="margin-top: 10px;"><em>Please complete the Stripe onboarding to enable charges and payouts.</em></p>
+          </div>
+        `;
+      }
+    }
+    
+    async function createStripeAccount() {
+      try {
+        const btn = document.getElementById('createAccountBtn');
+        btn.disabled = true;
+        btn.textContent = 'Creating account...';
+        
+        const response = await fetch(`/api/restaurants/${restaurantId}/stripe/create`, {
+          method: 'POST'
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          document.getElementById('message').textContent = 'Stripe account created! Redirecting to onboarding...';
+          document.getElementById('message').className = 'message success';
+          
+          setTimeout(() => {
+            window.open(data.onboarding_url, '_blank');
+            checkStripeStatus();
+          }, 1500);
+        } else {
+          document.getElementById('message').textContent = data.error || 'Failed to create account';
+          document.getElementById('message').className = 'message error';
+          btn.disabled = false;
+          btn.textContent = 'Create Stripe Account';
+        }
+      } catch (error) {
+        document.getElementById('message').textContent = 'An error occurred';
+        document.getElementById('message').className = 'message error';
+      }
+    }
+    
+    async function refreshOnboardingLink() {
+      try {
+        const btn = document.getElementById('refreshLinkBtn');
+        btn.disabled = true;
+        btn.textContent = 'Generating link...';
+        
+        const response = await fetch(`/api/restaurants/${restaurantId}/stripe/refresh`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          document.getElementById('message').textContent = 'Opening onboarding link...';
+          document.getElementById('message').className = 'message success';
+          
+          setTimeout(() => {
+            window.open(data.onboarding_url, '_blank');
+          }, 500);
+        } else {
+          document.getElementById('message').textContent = data.error || 'Failed to refresh link';
+          document.getElementById('message').className = 'message error';
+        }
+        
+        btn.disabled = false;
+        btn.textContent = 'Refresh Onboarding Link';
+      } catch (error) {
+        document.getElementById('message').textContent = 'An error occurred';
+        document.getElementById('message').className = 'message error';
+      }
+    }
+    
+    document.getElementById('createAccountBtn').addEventListener('click', createStripeAccount);
+    document.getElementById('refreshLinkBtn').addEventListener('click', refreshOnboardingLink);
+    document.getElementById('checkStatusBtn').addEventListener('click', checkStripeStatus);
+    
+    loadRestaurant();
+  </script>
+</body>
+</html>
